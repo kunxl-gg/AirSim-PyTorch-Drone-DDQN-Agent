@@ -3,6 +3,7 @@ saved models
 last_episode.txt
 log.txt
 .idea
-__pycache__"""
+__pycache__
 videos
 tests.txt
+.gitignore
