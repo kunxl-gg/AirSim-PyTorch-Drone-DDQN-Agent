@@ -59,7 +59,7 @@ class Agent:
             self.device = torch.device('cpu')
 
         self.dqn = DQN()
-        self.env = DroneEnv(useGPU, useDepth)
+        self.env = DroneEnv(useDepth)
         self.memory = deque(maxlen=10000)
         self.optimizer = optim.Adam(self.dqn.parameters(), self.learning_rate)
 
