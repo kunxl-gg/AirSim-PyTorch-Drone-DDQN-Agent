@@ -11,11 +11,11 @@ import torch.optim as optim
 from PIL import Image
 from setuptools import glob
 from env import DroneEnv
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 import time
 from prioritized_memory import Memory
 
-writer = SummaryWriter()
+# # writer = SummaryWriter()
 
 torch.manual_seed(0)
 random.seed(0)
@@ -115,7 +115,7 @@ class DDQN_Agent:
         self.optimizer = optim.Adam(self.policy.parameters(), self.learning_rate)
         obs, _ = self.env.reset()
         tensor = self.transformToTensor(obs)
-        writer.add_graph(self.policy, tensor)
+        # writer.add_graph(self.policy, tensor)
 
     def updateNetworks(self):
         self.target.load_state_dict(self.policy.state_dict())
@@ -250,15 +250,15 @@ class DDQN_Agent:
                         memory_usage_allocated = np.float64(round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1))
                         memory_usage_cached = np.float64(round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1))
 
-                        writer.add_scalar("memory_usage_allocated", memory_usage_allocated, self.episode)
-                        writer.add_scalar("memory_usage_cached", memory_usage_cached, self.episode)
+                        # writer.add_scalar("memory_usage_allocated", memory_usage_allocated, self.episode)
+                        # writer.add_scalar("memory_usage_cached", memory_usage_cached, self.episode)
 
-                    writer.add_scalar('epsilon_value', self.eps_threshold, self.episode)
-                    writer.add_scalar('score_history', score, self.episode)
-                    writer.add_scalar('reward_history', reward, self.episode)
-                    writer.add_scalar('Total steps', self.steps_done, self.episode)
-                    writer.add_scalars('General Look', {'score_history': score,
-                                                        'reward_history': reward}, self.episode)
+                    # writer.add_scalar('epsilon_value', self.eps_threshold, self.episode)
+                    # writer.add_scalar('score_history', score, self.episode)
+                    # writer.add_scalar('reward_history', reward, self.episode)
+                    # writer.add_scalar('Total steps', self.steps_done, self.episode)
+                    # writer.add_scalars('General Look', {'score_history': score,
+                                                        # 'reward_history': reward}, self.episode)
 
                     # save checkpoint
                     if self.episode % self.save_interval == 0:
@@ -281,7 +281,7 @@ class DDQN_Agent:
                         self.test()
 
                     break
-        writer.close()
+        # writer.close()
 
     def test(self):
         self.test_network.load_state_dict(self.target.state_dict())
@@ -316,7 +316,7 @@ class DDQN_Agent:
                     file.write("TEST, reward: {}, score: {}, total steps: {}\n".format(
                         reward, score, self.steps_done))
 
-                writer.add_scalars('Test', {'score': score, 'reward': reward}, self.episode)
+                # writer.add_scalars('Test', {'score': score, 'reward': reward}, self.episode)
 
                 end = time.time()
                 stopWatch = end - start
@@ -325,7 +325,7 @@ class DDQN_Agent:
                 # Convert images to video
                 frameSize = (256, 144)
                 import cv2
-                video = cv2.VideoWriter("videos\\test_video_episode_{}_score_{}.avi".format(self.episode, score), cv2.VideoWriter_fourcc(*'DIVX'), 7, frameSize)
+                # # video = cv2.VideoWriter("videos\\test_video_episode_{}_score_{}.avi".format(self.episode, score), cv2.VideoWriter_fourcc(*'DIVX'), 7, frameSize)
 
                 for img in image_array:
                     video.write(img)

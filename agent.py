@@ -11,14 +11,14 @@ import torch.optim as optim
 from PIL import Image
 from setuptools import glob
 from env import DroneEnv
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 import time
 
 torch.manual_seed(0)
 random.seed(0)
 np.random.seed(0)
 
-writer = SummaryWriter()  #"runs/Mar03_14-55-58_DESKTOP-QGNSALL"
+# # writer = SummaryWriter()  #"runs/Mar03_14-55-58_DESKTOP-QGNSALL"
 
 class DQN(nn.Module):
     def __init__(self, in_channels=1, num_actions=4):
@@ -102,7 +102,7 @@ class Agent:
 
         obs = self.env.reset()
         tensor = self.transformToTensor(obs)
-        writer.add_graph(self.dqn, tensor)
+        # writer.add_graph(self.dqn, tensor)
     def transformToTensor(self, img):
         if self.useGPU:
             tensor = torch.cuda.FloatTensor(img)
@@ -221,16 +221,16 @@ class Agent:
                         memory_usage_allocated = np.float64(round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1))
                         memory_usage_cached = np.float64(round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1))
 
-                        writer.add_scalar("memory_usage_allocated", memory_usage_allocated, self.episode)
-                        writer.add_scalar("memory_usage_cached", memory_usage_cached, self.episode)
+                        # writer.add_scalar("memory_usage_allocated", memory_usage_allocated, self.episode)
+                        # writer.add_scalar("memory_usage_cached", memory_usage_cached, self.episode)
 
-                    writer.add_scalar('epsilon_value', self.eps_threshold, self.episode)
-                    writer.add_scalar('score', score, self.episode)
-                    writer.add_scalar('reward', reward, self.episode)
-                    writer.add_scalar('Total steps', self.steps_done, self.episode)
-                    writer.add_scalars('General Look', {'epsilon_value': self.eps_threshold,
-                                                    'score': score,
-                                                    'reward': reward}, self.episode)
+                    # writer.add_scalar('epsilon_value', self.eps_threshold, self.episode)
+                    # writer.add_scalar('score', score, self.episode)
+                    # writer.add_scalar('reward', reward, self.episode)
+                    # writer.add_scalar('Total steps', self.steps_done, self.episode)
+                    # writer.add_scalars('General Look', {'epsilon_value': self.eps_threshold,
+                                                    # 'score': score,
+                                                    # 'reward': reward}, self.episode)
 
                     # save checkpoint
                     if self.episode % self.save_interval == 0:
@@ -248,4 +248,4 @@ class Agent:
                     print("Episode is done, episode time: ", stopWatch)
 
                     break
-        writer.close()
+        # writer.close()
