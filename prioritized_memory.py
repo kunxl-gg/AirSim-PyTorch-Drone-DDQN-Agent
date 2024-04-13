@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import torch
 from SumTree import SumTree
 
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
@@ -16,6 +17,8 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         return (np.abs(error) + self.e) ** self.a
 
     def add(self, error, state, action, reward, next_state):
+        if isinstance(state, list):
+            raise Exception("how tf did this happen")
         p = self._get_priority(error)
         self.tree.add(p, state, action, reward, next_state)
 
@@ -46,7 +49,17 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         sampling_probabilities = priorities / self.tree.total()
         is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
         is_weight /= is_weight.max()
-
+        # for i in states:
+        #     if isinstance(i, list):
+        #         raise Exception("how tf did this happen")
+        if isinstance(states, list):
+            states=torch.stack(states)
+            states=states.squeeze(1)
+            #print(states.squeeze(1).shape)
+        if isinstance(next_states, list):
+            next_states=torch.stack(next_states)
+            next_states=next_states.squeeze(1)
+            #print(next_states.squeeze(1).shape)
         return states, actions, rewards, next_states, idxs, is_weight
 
     def update(self, idx, error):

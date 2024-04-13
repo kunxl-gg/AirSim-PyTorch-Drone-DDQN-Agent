@@ -24,7 +24,7 @@ class DroneEnv(object):
     """Drone environment class using AirSim python API"""
 
     def __init__(self, useDepth=False):
-        self.client = airsim.MultirotorClient(ip="172.30.19.183", port=41451)
+        self.client = airsim.MultirotorClient()
         self.last_dist = self.get_distance(self.client.getMultirotorState().kinematics_estimated.position)
         self.quad_offset = (0, 0, 0)
         self.useDepth = useDepth
