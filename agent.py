@@ -11,14 +11,14 @@ import torch.optim as optim
 from PIL import Image
 from setuptools import glob
 from env import DroneEnv
-# from torch.utils.tensorboard import SummaryWriter
+# # from torch.utils.tensorboard import SummaryWriter
 import time
 
 torch.manual_seed(0)
 random.seed(0)
 np.random.seed(0)
 
-# # writer = SummaryWriter()  #"runs/Mar03_14-55-58_DESKTOP-QGNSALL"
+# # # # writer = SummaryWriter()  #"runs/Mar03_14-55-58_DESKTOP-QGNSALL"
 
 class DQN(nn.Module):
     def __init__(self, in_channels=1, num_actions=4):
@@ -59,7 +59,7 @@ class Agent:
             self.device = torch.device('cpu')
 
         self.dqn = DQN()
-        self.env = DroneEnv(useGPU, useDepth)
+        self.env = DroneEnv(useDepth)
         self.memory = deque(maxlen=10000)
         self.optimizer = optim.Adam(self.dqn.parameters(), self.learning_rate)
 
@@ -248,4 +248,4 @@ class Agent:
                     print("Episode is done, episode time: ", stopWatch)
 
                     break
-        # writer.close()
+        writer.close()
