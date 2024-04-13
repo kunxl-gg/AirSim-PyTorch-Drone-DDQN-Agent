@@ -69,6 +69,25 @@ class DroneEnv(object):
         obs, image = self.get_obs()
 
         return obs, image
+    
+    def reset_lstm(self, num_images):
+        self.client.reset()
+        self.last_dist = self.get_distance(self.client.getMultirotorState().kinematics_estimated.position)
+        self.client.enableApiControl(True)
+        self.client.armDisarm(True)
+        self.client.takeoffAsync().join()
+        quad_state = self.client.getMultirotorState().kinematics_estimated.position
+        self.client.moveToPositionAsync(quad_state.x_val, quad_state.y_val, -7, 1).join()
+
+        images_sequence = []
+        obs_sequence = []
+        for _ in range(num_images):
+            obs, image = self.get_obs()
+            images_sequence.append(image)
+            obs_sequence.append(obs)
+
+        return obs_sequence, images_sequence
+
 
     def get_obs(self):
         if self.useDepth:
