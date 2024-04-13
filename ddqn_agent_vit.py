@@ -50,19 +50,19 @@ class DDQN_Agent:
         self.eps_decay = 30000
         self.gamma = 0.8
         self.learning_rate = 0.001
-        self.batch_size = 512
+        self.batch_size = 32
         self.memory = Memory(10000)
         self.max_episodes = 10000
         self.save_interval = 2
-        self.test_interval = 10
+        self.test_interval = 1
         self.network_update_interval = 10
         self.episode = -1
         self.steps_done = 0
         self.max_steps = 34
 
-        self.policy = ViT((84,84),(12,12),4,16,12,4,128)
-        self.target = ViT((84,84),(12,12),4,16,12,4,128)
-        self.test_network = ViT((84,84),(12,12),4,16,12,4,128)
+        self.policy = ViT(image_size=(84,84),patch_size=(12,12),num_classes=4,dim=16,depth=12,heads=4,mlp_dim=128)
+        self.target = ViT(image_size=(84,84),patch_size=(12,12),num_classes=4,dim=16,depth=12,heads=4,mlp_dim=128)
+        self.test_network = ViT(image_size=(84,84),patch_size=(12,12),num_classes=4,dim=16,depth=12,heads=4,mlp_dim=128)
         self.target.eval()
         self.test_network.eval()
         self.updateNetworks()
@@ -168,15 +168,11 @@ class DDQN_Agent:
             return
 
         states, actions, rewards, next_states, idxs, is_weights = self.memory.sample(self.batch_size)
-
-        states = tuple(states)
-        next_states = tuple(next_states)
-
-        states = torch.cat(states)
-        actions = np.asarray(actions)
-        rewards = np.asarray(rewards)
-        next_states = torch.cat(next_states)
-
+        if isinstance(states,list):
+            states=torch.stack(states)
+        if isinstance(next_states,list):
+            next_states=torch.stack(next_states)
+        #print(states.shape,next_states.shape)
         current_q = self.policy(states)[[range(0, self.batch_size)], [actions]]
         next_q =self.target(next_states).cpu().detach().numpy()[[range(0, self.batch_size)], [actions]]
         expected_q = torch.FloatTensor(rewards + (self.gamma * next_q)).to(device)
@@ -244,8 +240,10 @@ class DDQN_Agent:
                         print('Total Memory:', self.convert_size(torch.cuda.get_device_properties(0).total_memory))
                         print('Allocated Memory:', self.convert_size(torch.cuda.memory_allocated(0)))
                         print('Cached Memory:', self.convert_size(torch.cuda.memory_reserved(0)))
-                        print('Free Memory:', self.convert_size(torch.cuda.get_device_properties(0).total_memory - (
-                                torch.cuda.max_memory_allocated() + torch.cuda.max_memory_reserved())))
+                        print(torch.cuda.get_device_properties(0).total_memory - (
+                                torch.cuda.max_memory_allocated() + torch.cuda.max_memory_reserved()))
+                        # print('Free Memory:', self.convert_size(torch.cuda.get_device_properties(0).total_memory - (
+                        #         torch.cuda.max_memory_allocated() + torch.cuda.max_memory_reserved())))
 
                         # tensorboard --logdir=runs
                         memory_usage_allocated = np.float64(round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1))
