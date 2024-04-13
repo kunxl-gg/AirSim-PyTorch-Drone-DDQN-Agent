@@ -15,8 +15,10 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 from prioritized_memory import Memory
 from DQRN_net import QNetwork, AttentionModule
+import wandb
 
 writer = SummaryWriter()
+wandb.init(project="my-project", name="run-name")
 
 torch.manual_seed(0)
 random.seed(0)
@@ -31,7 +33,7 @@ class DDQN_Agent_LSTM:
         self.eps_decay = 30000
         self.gamma = 0.8
         self.learning_rate = 0.001
-        self.batch_size = 512
+        self.batch_size = 256
         self.memory = Memory(10000)
         self.max_episodes = 10000
         self.save_interval = 2
@@ -61,6 +63,7 @@ class DDQN_Agent_LSTM:
         # LOGGING
         cwd = os.getcwd()
         self.save_dir = os.path.join(cwd, "saved models")
+        print("Save directory: ", self.save_dir)
         if not os.path.exists(self.save_dir):
             os.mkdir("saved models")
         if not os.path.exists(os.path.join(cwd, "videos")):
@@ -72,19 +75,20 @@ class DDQN_Agent_LSTM:
             self.test_network = self.test_network.to(device)  # to use GPU
 
         # model backup
-        # files = glob.glob(self.save_dir + '\\*.pt')
-        # if len(files) > 0:
-        #     files.sort(key=os.path.getmtime)
-        #     file = files[-1]
-        #     checkpoint = torch.load(file)
-        #     self.policy.load_state_dict(checkpoint['state_dict'])
-        #     self.episode = checkpoint['episode']
-        #     self.steps_done = checkpoint['steps_done']
-        #     self.updateNetworks()
-        #     print("Saved parameters loaded"
-        #           "\nModel: ", file,
-        #           "\nSteps done: ", self.steps_done,
-        #           "\nEpisode: ", self.episode)
+        files = glob.glob("saved models" + '/*.pt')
+        print(len(files))
+        if len(files) > 0:
+            files.sort(key=os.path.getmtime)
+            file = files[-1]
+            checkpoint = torch.load(file)
+            self.policy.load_state_dict(checkpoint['state_dict'])
+            self.episode = checkpoint['episode']
+            self.steps_done = checkpoint['steps_done']
+            self.updateNetworks()
+            print("Saved parameters loaded"
+                  "\nModel: ", file,
+                  "\nSteps done: ", self.steps_done,
+                  "\nEpisode: ", self.episode)
 
 
         else:
@@ -155,16 +159,16 @@ class DDQN_Agent_LSTM:
             action = random.randrange(0, 4)
         return int(action)
 
-    def append_sample(self, state, action, reward, next_state):
-        next_state = self.transformToTensor(next_state)
+    # def append_sample(self, state, action, reward, next_state):
+    #     next_state = self.transformToTensor(next_state)
 
-        current_q = self.policy(state).squeeze().cpu().detach().numpy()[action]
-        next_q = self.target(next_state).squeeze().cpu().detach().numpy()[action]
-        expected_q = reward + (self.gamma * next_q)
+    #     current_q = self.policy(state).squeeze().cpu().detach().numpy()[action]
+    #     next_q = self.target(next_state).squeeze().cpu().detach().numpy()[action]
+    #     expected_q = reward + (self.gamma * next_q)
 
-        error = abs(current_q - expected_q),
+    #     error = abs(current_q - expected_q),
 
-        self.memory.add(error, state, action, reward, next_state)
+    #     self.memory.add(error, state, action, reward, next_state)
     
     def memorize_sequence(self, state_sequence,action,reward,next_state_sequence):
         state_sequence = torch.stack(state_sequence)
@@ -175,7 +179,7 @@ class DDQN_Agent_LSTM:
         next_q = self.target(next_state_sequence).squeeze().cpu().detach().numpy()[action]
         expected_q = reward + (self.gamma * next_q)
 
-        error = abs(current_q - expected_q),
+        error = abs(current_q - expected_q)
 
         self.memory.add(error, state_sequence, action, reward, next_state_sequence)
 
@@ -187,16 +191,30 @@ class DDQN_Agent_LSTM:
 
         # states = torch.stack([torch.stack(seq) for seq in state_sequences])
         # next_states = torch.stack([torch.stack(seq) for seq in next_state_sequences])
-        states = states.to(device)
-        next_states = next_states.to(device)
+        # if isinstance(state_sequences, list):
+        #     if isinstance(state_sequences[0], list):
+        #         state_sequences = torch.stack([torch.stack(seq) for seq in state_sequences])
+        #         next_state_sequences = torch.stack([torch.stack(seq) for seq in next_state_sequences])
+        #         if state_sequences
+        #     else:
+        #         state_sequences = torch.stack(state_sequences)
+        #         next_state_sequences = torch.stack(next_state_sequences)
+        states = state_sequences.to(device)
+        next_states = next_state_sequences.to(device)
 
         actions = np.asarray(actions)
         rewards = np.asarray(rewards)
-
+        
+        if len(states.shape) != 5:
+            raise Exception("States shape is not 5, it is: ", states.shape)
+        # current_q = self.policy(states).squeeze().cpu().detach().numpy()[actions]
+        # next_q = self.target(next_states).squeeze().cpu().detach().numpy()[actions]
         current_q = self.policy(states).gather(1, torch.tensor(actions).unsqueeze(1).to(device)).squeeze(1)
-        next_q =self.policy(states).gather(1, torch.tensor(actions).unsqueeze(1).to(device)).squeeze(1)
-        expected_q = torch.FloatTensor(rewards + (self.gamma * next_q)).to(device)
-
+        next_q =self.policy(next_states).gather(1, torch.tensor(actions).unsqueeze(1).to(device)).squeeze(1)
+        rewards = torch.FloatTensor(rewards).to(device)
+        expected_q = rewards + (self.gamma * next_q)
+        # expected_q = rewards + (self.gamma * next_q)
+        # error = abs(current_q - expected_q)
         errors = torch.abs(current_q.squeeze() - expected_q.squeeze()).cpu().detach().numpy()
 
         # update priority
@@ -267,6 +285,13 @@ class DDQN_Agent_LSTM:
                     print(
                         "episode:{0}, reward: {1}, mean reward: {2}, score: {3}, epsilon: {4}, total steps: {5}".format(
                             self.episode, reward, round(score / steps, 2), score, self.eps_threshold, self.steps_done))
+                    wandb.log({
+                        "reward": reward,
+                        "mean_reward": round(score / steps, 2),
+                        "score": score,
+                        "epsilon": self.eps_threshold,
+                        "total_steps": self.steps_done
+                    })
                     score_history.append(score)
                     reward_history.append(reward)
                     with open('log.txt', 'a') as file:
@@ -336,8 +361,8 @@ class DDQN_Agent_LSTM:
                 for _ in range(self.num_frames):
                     state_sequence.append(state)
     
-
-            action = int(np.argmax(self.test_network(state_sequence).cpu().data.squeeze().numpy()))
+            
+            action = int(np.argmax(self.test_network(torch.stack(state_sequence).permute(1,0,2,3,4)).cpu().data.squeeze().numpy()))
             next_state, reward, done, next_state_image = self.env.step(action)
             image_array.append(next_state_image)
 
