@@ -52,7 +52,7 @@ class QNetwork(nn.Module):
                 self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1) #9x9x64 -> 7x7x64
                 self.flatten = nn.Flatten() #7x7x64 -> 3136
             else:
-                print('>>>> Defining Recurrent Modules...')
+                # print('>>>> Defining Recurrent Modules...')
                 self.conv1 = nn.Conv2d(input_shape[2], 32, kernel_size=8, stride=4)
                 self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
                 self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
@@ -92,7 +92,7 @@ class QNetwork(nn.Module):
                 x = F.relu(self.conv3(x))
                 x = self.flatten(x)
             else:
-                print('>>>> Defining Recurrent Modules...')
+                # print('>>>> Defining Recurrent Modules...')
                 batch_size, timesteps, C, H, W = x.size()
 
                 x = x.view(batch_size * timesteps, C, H, W)
