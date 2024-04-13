@@ -14,6 +14,7 @@ from env import DroneEnv
 # from torch.utils.tensorboard import SummaryWriter
 import time
 from prioritized_memory import Memory
+from ViT import ViT
 
 # # writer = SummaryWriter()
 
@@ -23,22 +24,22 @@ np.random.seed(0)
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-class DQN(nn.Module):
-    def __init__(self, in_channels=1, num_actions=4):
-        super(DQN, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 84, kernel_size=4, stride=4)
-        self.conv2 = nn.Conv2d(84, 42, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(42, 21, kernel_size=2, stride=2)
-        self.fc4 = nn.Linear(21 * 4 * 4, 168)
-        self.fc5 = nn.Linear(168, num_actions)
+# class DQN(nn.Module):
+#     def __init__(self, in_channels=1, num_actions=4):
+#         super(DQN, self).__init__()
+#         self.conv1 = nn.Conv2d(in_channels, 84, kernel_size=4, stride=4)
+#         self.conv2 = nn.Conv2d(84, 42, kernel_size=4, stride=2)
+#         self.conv3 = nn.Conv2d(42, 21, kernel_size=2, stride=2)
+#         self.fc4 = nn.Linear(21 * 4 * 4, 168)
+#         self.fc5 = nn.Linear(168, num_actions)
 
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.fc4(x))
-        return self.fc5(x)
+#     def forward(self, x):
+#         x = F.relu(self.conv1(x))
+#         x = F.relu(self.conv2(x))
+#         x = F.relu(self.conv3(x))
+#         x = x.view(x.size(0), -1)
+#         x = F.relu(self.fc4(x))
+#         return self.fc5(x)
 
 
 class DDQN_Agent:
@@ -59,9 +60,9 @@ class DDQN_Agent:
         self.steps_done = 0
         self.max_steps = 34
 
-        self.policy = DQN()
-        self.target = DQN()
-        self.test_network = DQN()
+        self.policy = ViT((84,84),(12,12),4,16,12,4,128)
+        self.target = ViT((84,84),(12,12),4,16,12,4,128)
+        self.test_network = ViT((84,84),(12,12),4,16,12,4,128)
         self.target.eval()
         self.test_network.eval()
         self.updateNetworks()
